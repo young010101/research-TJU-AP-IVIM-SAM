@@ -1,0 +1,23 @@
+Certainly! Here's an Apache License 2.0 template filled with content for the `ivim_analysis` project, which you can use as the `LICENSE` file in your project:
+
+---
+
+Copyright [year] [your name or organization]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+---
+
+Replace `[year]` with the current year, and `[your name or organization]` with the name of the person or organization that holds the copyright. This license allows others to freely use, modify, and distribute your project's code, as long as they include your copyright notice and disclaimer in their copies and do not hold you liable for their use.
+
+Remember to include this `LICENSE` file in the root directory of your project repository to indicate to users and contributors the terms under which they can use, modify, and distribute your project's code.

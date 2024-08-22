@@ -1,11 +1,11 @@
 *.png
 
 *__pycache__/*
+__pycache__/
 
 *.ipynb_checkpoints/*
+.ipynb_checkpoints/
 
 *.npy
 
 *.h5
-
-ivim_analysis/
