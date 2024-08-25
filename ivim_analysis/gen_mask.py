@@ -7,6 +7,7 @@ Hello.
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from math import pi
 
 def generate_mask(img_height,img_width,radius,center_x,center_y):
     """generate a circle mask.

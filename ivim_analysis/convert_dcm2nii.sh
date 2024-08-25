@@ -2,10 +2,13 @@
 
 # Specify the folder where the DICOM files are located
 #DICOM_DIR="/path/to/dicom/folder"
-DICOM_DIR="/data/users/cyang/acute_pancreatitis/unprocess/dcm/lizhen_feng_0305/DICOM"
+# DICOM_DIR="/data/users/cyang/acute_pancreatitis/unprocess/dcm/lizhen_feng_0305/DICOM"
+# DICOM_DIR="/data/users/cyang/acute_pancreatitis/unprocess/dcm/20240821"
+DICOM_DIR="/data/users/cyang/acute_pancreatitis/unprocess/dcm/paitents_3_240822/DICOM"
 
 # Specify the folder where the NIfTI output should be stored
-NIFTI_DIR="/data/users/cyang/acute_pancreatitis/unprocess/nii_tmp_2/"
+# NIFTI_DIR="/data/users/cyang/acute_pancreatitis/unprocess/nii_tmp_2/"
+NIFTI_DIR="/data/users/cyang/acute_pancreatitis/unprocess/patient_mid/"
 
 ST0_DIR="ST0"
 

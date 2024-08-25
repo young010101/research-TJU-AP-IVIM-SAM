@@ -9,3 +9,7 @@ __pycache__/
 *.npy
 
 *.h5
+
+tmp*
+
+output*
