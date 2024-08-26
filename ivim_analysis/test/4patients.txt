@@ -1,0 +1,9 @@
+4
+1.25e11
+DongWeilong  DongWeilong.nii.gz  129  156  4
+LiuBolin     LiuBolin.nii.gz     129  156  4
+XuJiaheng    XuJiaheng.nii.gz    129  156  4
+ZhangXifeng  ZhangXifeng.nii.gz  129  156  4
+[!] Your program should not read this line, as all 10 patients were already listed
+and there is no further information to be specified. So you can put comments here.
+This file contains an interesting 3-body system.
