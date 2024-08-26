@@ -61,30 +61,29 @@ class IVIMAnalysis:
 
     def save_ivim_params(self, output_path: str = "../output/pickles/ivim"):
         """Save the IVIM parameters to a pickle file"""
+        assert self.ivim_params_maps is not None, "IVIM parameters not found. Run the IVIM model first."
         if not os.path.exists(output_path):
             os.makedirs(output_path)
 
         pickle_ivim_path = os.path.join(output_path, 'ivim_maps'+self.patient_id+'.pkl')
         with open(pickle_ivim_path, 'wb') as f:
-            pickle.dump(analysis.ivim_params_maps, f)
+            pickle.dump(self.ivim_params_maps, f)
         
         self.pickle_ivim_path = pickle_ivim_path
 
-    def plot_maps(self, from_pickle: bool = False, pickle_ivim_path: str = None):
-        if from_pickle:
-            if pickle_ivim_path is None:
-                pickle_ivim_path = self.pickle_ivim_path
-            with open(pickle_ivim_path, 'rb') as f:
-                self.ivim_params_maps = pickle.load(f)
-            lim = [(0, 10000), (0, 1), (0, 0.01), (0, 0.001)]
-            for key, value, lim in zip(self.ivim_params_maps.__dict__.keys(), self.ivim_params_maps.__dict__.values(), lim):
-                plot_map(value, key, lim, key)
-        else:
-            plot_map(self.ivimfit.S0_predicted, "Predicted S0", (0, 10000), "predicted_S0")
-            plot_map(self.data_slice[:, :, 0], "Measured S0", (0, 10000), "measured_S0")
-            plot_map(self.ivimfit.perfusion_fraction, "f", (0, 1), "perfusion_fraction")
-            plot_map(self.ivimfit.D_star, "D*", (0, 0.01), "perfusion_coeff")
-            plot_map(self.ivimfit.D, "D", (0, 0.001), "diffusion_coeff")
+    def plot_map(self, map_data: np.ndarray, title:str ="Predicted S0", lim=(0, 10000), filename: str = "predicted_S0"):
+        plot_map(map_data, title, lim, filename)
+
+    def plot_maps(self):
+        lim = [(0, 10000), (0, 1), (0, 0.01), (0, 0.001)]
+        for key, value, lim in zip(self.ivim_params_maps.__dict__.keys(), self.ivim_params_maps.__dict__.values(), lim):
+            plot_map(value, key, lim, key)
+        
+            # plot_map(self.ivimfit.S0_predicted, "Predicted S0", (0, 10000), "predicted_S0")
+            # plot_map(self.data_slice[:, :, 0], "Measured S0", (0, 10000), "measured_S0")
+            # plot_map(self.ivimfit.perfusion_fraction, "f", (0, 1), "perfusion_fraction")
+            # plot_map(self.ivimfit.D_star, "D*", (0, 0.01), "perfusion_coeff")
+            # plot_map(self.ivimfit.D, "D", (0, 0.001), "diffusion_coeff")
 
     def plot_maps_roi(self):
         plot_map_roi(self.ivimfit.S0_predicted, "Predicted S0", (0, 10000), "predicted_S0", self.x_roi, self.y_roi)
@@ -92,6 +91,15 @@ class IVIMAnalysis:
         plot_map_roi(self.ivimfit.perfusion_fraction, "f", (0, 1), "perfusion_fraction", self.x_roi, self.y_roi)
         plot_map_roi(self.ivimfit.D_star, "D*", (0, 0.01), "perfusion_coeff", self.x_roi, self.y_roi)
         plot_map_roi(self.ivimfit.D, "D", (0, 0.001), "diffusion_coeff", self.x_roi, self.y_roi)
+    
+    def check_pickle_and_load(self, pickle_ivim_path: str):
+        if os.path.exists(pickle_ivim_path):
+            with open(pickle_ivim_path, 'rb') as file:
+                self.ivim_params_maps = pickle.load(file)
+            assert self.ivim_params_maps is not None
+            self.plot_maps(from_pickle = True, pickle_ivim_path = pickle_ivim_path)
+            return True
+        return False
 
     def run_analysis(self, bvals, bvecs, load_from_pickle: bool = False, pickle_ivim_path: str = None, save_ivim_params: bool = False): 
         if load_from_pickle:
@@ -99,7 +107,7 @@ class IVIMAnalysis:
             with open(pickle_ivim_path, 'rb') as file:
                 self.ivim_params_maps = pickle.load(file)
             assert self.ivim_params_maps is not None
-            self.plot_maps(from_pickle = True, pickle_ivim_path = pickle_ivim_path)
+            self.plot_maps()
             return
         # self.preprocess_data()
         self.generate_roi_mask()

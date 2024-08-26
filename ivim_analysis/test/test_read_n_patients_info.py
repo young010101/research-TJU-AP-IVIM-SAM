@@ -14,6 +14,12 @@ class TestReadNPatientsInfo(unittest.TestCase):
         self.assertEqual(n_analyses[0].x_roi, 129)
         self.assertEqual(n_analyses[0].y_roi, 156)
         self.assertEqual(n_analyses[0].rad, 4)
+    
+    def test_run_ivim(self):
+        patients_info_file = 'ivim_analysis/test/4patients.txt'
+        zhaog_path = '/data/users/cyang/acute_pancreatitis/unprocess/ivim'
+        n_analyses = readPatientsInfo(patients_info_file, zhaog_path)
+        # n_analyses[0].run_analysis()
 
 if __name__ == '__main__':
     unittest.main()
