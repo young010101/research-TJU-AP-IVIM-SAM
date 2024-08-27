@@ -93,32 +93,35 @@ class IVIMAnalysis:
         plot_map_roi(self.ivimfit.D, "D", (0, 0.001), "diffusion_coeff", self.x_roi, self.y_roi)
     
     def check_pickle_and_load(self, pickle_ivim_path: str):
+        """If `pickle` file found, load the data from it."""
         if os.path.exists(pickle_ivim_path):
             with open(pickle_ivim_path, 'rb') as file:
                 self.ivim_params_maps = pickle.load(file)
             assert self.ivim_params_maps is not None
-            self.plot_maps(from_pickle = True, pickle_ivim_path = pickle_ivim_path)
+            self.plot_maps()
             return True
         return False
 
     def run_analysis(self, bvals, bvecs, load_from_pickle: bool = False, pickle_ivim_path: str = None, save_ivim_params: bool = False): 
+        self.generate_roi_mask()
+        self.bvals = bvals
+        self.bvecs = bvecs
         if load_from_pickle:
             print("Loading data from pickle file")
-            with open(pickle_ivim_path, 'rb') as file:
-                self.ivim_params_maps = pickle.load(file)
-            assert self.ivim_params_maps is not None
-            self.plot_maps()
-            return
+            if self.check_pickle_and_load(pickle_ivim_path):
+                print("Data loaded successfully")
+            else:
+                print("Pickle file not found. Running the analysis.")
+                self.fit_ivim_model(bvals, bvecs)  # Consumes a lot of time
+        else:
+            self.fit_ivim_model(bvals, bvecs)
+
         # self.preprocess_data()
-        self.generate_roi_mask()
-        self.fit_ivim_model(bvals, bvecs)  # Consumes a lot of time
         self.plot_maps()
-        if save_ivim_params:
+        self.estimated_params_of_roi()
+        if save_ivim_params and self.ivim_params_maps is not None and load_from_pickle == False:
             self.save_ivim_params()
         
-        # TODO: If `pickle` file found, load the data from it
-        
-
     def plt_circle_roi(self):
         """plot the ROI circle on the image"""
         x_roi = self.x_roi
@@ -137,19 +140,38 @@ class IVIMAnalysis:
 
     def plot_b_intensities(self, pancreas_slice = 9):
         """plot the b-value intensities"""
+        if self.mask_roi is None:
+            self.generate_roi_mask()
+            print("!Warning! ROI mask generated")
+        assert self.mask_roi is not None, "Generate the ROI mask first"
         mask_roi = self.mask_roi
         num_bval = self.img_data.shape[3]
         print(num_bval)
         intensive_of_10b = np.zeros(num_bval)
         for i_bval in range(num_bval):
             intense_roi = np.sum(self.img_data[:,:,pancreas_slice,i_bval]*mask_roi)/mask_roi.sum()
-            intensive_of_10b[i_bval-9] = intense_roi
+            # intensive_of_10b[i_bval-9] = intense_roi
+            intensive_of_10b[i_bval-num_bval+1] = intense_roi
         
-        plt.scatter([0, 20, 50, 80, 150, 200, 500, 800, 1000, 1500],intensive_of_10b)
+        bvals = self.bvals
+        assert bvals is not None, "b-values not found"
+        assert len(bvals) == num_bval, "b-values length mismatch"
+        assert len(bvals) == len(intensive_of_10b), "b-values length mismatch"
+        if len(bvals) == 10:
+            plt.scatter([0, 20, 50, 80, 150, 200, 500, 800, 1000, 1500],intensive_of_10b)
+        else:
+            # !This part is broken
+            plt.scatter([0, 10, 20, 50, 80, 150, 200, 500, 800, 1000, 1500],intensive_of_10b)
+        # plt.scatter(bvals.sort(),intensive_of_10b)
 
     def estimated_params_of_roi(self, is_print = False):
         """List all poisition of where value is true"""
         estimated_params_roi = []
+
+        if self.ivimfit is None:
+            print("Run the IVIM model first.")
+            # estimated_params_roi.append(np.sum(np.nan_to_num(self.ivimfit.model_params[:,:,i])*mask_roi)/mask_roi.sum())
+            return None
 
         shape_ivim_params = self.ivimfit.model_params.shape
 
