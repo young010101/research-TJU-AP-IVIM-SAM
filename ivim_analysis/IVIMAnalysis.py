@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 import numpy as np
 import nibabel as nib
 from matplotlib import pyplot as plt
@@ -35,14 +35,15 @@ class IVIMAnalysis:
         self.patient_id: str = patient_id
         self.img: nib.Nifti1Image = nib.load(self.nii_path)
         self.img_data: np.ndarray = self.img.get_fdata()
-        self.mask_roi: np.ndarray = None
+        # self.mask_roi: np.ndarray = None
         self.ivimfit: Any = None
         self.bvals: np.ndarray = None
         self.bvecs: np.ndarray = None
-        self.estimated_params_roi: np.ndarray = None
+        # self.estimated_params_roi: np.ndarray = None
         self.ivim_params_maps: Any = None
         self.pickle_ivim_path: str = None
         self.dict_ivim_params: Dict[str, np.ndarray] = None
+        self.circles: List[tuple] = None
 
     class param_maps:
         """Also can use dictionary to store the parameters"""
@@ -61,9 +62,42 @@ class IVIMAnalysis:
         tmp = self.img_data[:, :, :, 1] / avol_
         self.img_data[:, :, :, 1] = tmp
 
+    @DeprecationWarning
     def generate_roi_mask(self):
         i_h, i_w = self.img_data.shape[0], self.img_data.shape[1]
-        self.mask_roi = generate_mask(i_h, i_w, self.rad, self.x_roi, self.y_roi)
+        self._mask_roi = generate_mask(i_h, i_w, self.rad, self.x_roi, self.y_roi)
+
+    @property
+    def mask_roi(self) -> np.ndarray:
+        i_h, i_w = self.img_data.shape[0], self.img_data.shape[1]
+        self._mask_roi = generate_mask(i_h, i_w, self.rad, self.x_roi, self.y_roi)
+        return self._mask_roi
+
+    # @mask_roi.setter
+    @property
+    def mask_multi_roi(self) -> List[np.ndarray]:
+        """Generate mask for multiple ROIs"""
+        circles: list = None
+        if circles is None:
+            circles = [
+                (self.x_roi, self.y_roi, self.rad),
+                (100, 100, 5),
+                (200, 200, 5),
+            ]
+        i_h, i_w = self.img_data.shape[0], self.img_data.shape[1]
+        mask_roi = []
+        for circle in circles:
+            x_roi, y_roi, rad = circle
+            mask_roi.append(generate_mask(i_h, i_w, rad, x_roi, y_roi))
+
+        self._mask_multi_roi = mask_roi
+        return self._mask_multi_roi
+
+    def plot_mask_roi(self):
+        fig, ax = plt.subplots(1, len(self.mask_multi_roi), figsize=(15, 4))
+        for i, mask in enumerate(self.mask_multi_roi):
+            cax = ax[i].imshow(mask, "gray")
+            fig.colorbar(cax, ax=ax[i])
 
     def fit_ivim_model(self, bvals, bvecs):
         gtab = gradient_table(bvals, bvecs, b0_threshold=0)
@@ -198,7 +232,7 @@ class IVIMAnalysis:
         save_ivim_params: bool = False,
         is_plot: bool = True,
     ):
-        self.generate_roi_mask()
+        # self.generate_roi_mask()
         self.bvals = bvals
         self.bvecs = bvecs
         if load_from_pickle:
@@ -215,7 +249,7 @@ class IVIMAnalysis:
         if is_plot:
             # self.plot_maps()
             self.plot_ivim()
-        self.estimated_params_of_roi()
+        # self.estimated_params_roi()
         if (
             save_ivim_params
             and self.ivim_params_maps is not None
@@ -313,22 +347,20 @@ class IVIMAnalysis:
             )
         # plt.scatter(bvals.sort(),intensive_of_10b)
 
-    def estimated_params_of_roi(self, is_print=False):
+    @property
+    def estimated_params_roi(self, is_print=False):
         """List all poisition of where value is true"""
         estimated_params_roi = []
 
         if self.ivimfit is None:
             print("Run the IVIM model first.")
-            # estimated_params_roi.append(np.sum(np.nan_to_num(self.ivimfit.model_params[:,:,i])*mask_roi)/mask_roi.sum())
             return None
-
-        shape_ivim_params = self.ivimfit.model_params.shape
 
         mask_roi = self.mask_roi
 
-        for i in range(shape_ivim_params[2]):
+        for i in range(self.dict_ivim_params):
             estimated_params_roi.append(
-                np.sum(np.nan_to_num(self.ivimfit.model_params[:, :, i]) * mask_roi)
+                np.sum(np.nan_to_num(self.dict_ivim_params[i][:, :, i]) * mask_roi)
                 / mask_roi.sum()
             )
 
@@ -336,9 +368,9 @@ class IVIMAnalysis:
             for param in estimated_params_roi:
                 print(f"Estimated parameter: {param}")
 
-        self.estimated_params_roi = estimated_params_roi
+        self._estimated_params_roi = estimated_params_roi
 
-        return estimated_params_roi
+        return self._estimated_params_roi
 
 
 if __name__ == "__main__":
