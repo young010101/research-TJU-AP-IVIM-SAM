@@ -1,0 +1,5 @@
+{
+  "patients_info_file": "../data/10patients.txt",
+  "zhaog_path": "/data/users/cyang/acute_pancreatitis/unprocess/ivim",
+  "output_path": "../output/pickles/ivim"
+}

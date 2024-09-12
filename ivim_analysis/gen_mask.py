@@ -1,5 +1,5 @@
-"""How to edit a great discribtion.
-Cheak the web of python.
+"""How to edit a great description.
+Check the web of python.
 
 Hello.
 """
@@ -22,7 +22,7 @@ def generate_mask(img_height, img_width, radius, center_x, center_y):
 
     Returns
     -------
-    mask : ndarray of shape (img_height,img_width)
+    mask : array of shape (img_height,img_width)
         a circle mask.
 
     See Also
@@ -44,6 +44,33 @@ def generate_mask(img_height, img_width, radius, center_x, center_y):
     return mask
 
 
+def plot_ivim(dict_ivim_params):
+    fig, axes = plt.subplots(2, 2)
+    axes = axes.flatten()
+
+    lim_dict = {
+        "D": [0, 0.001],
+        "f": [0, 1],
+        "D_star": [0, 0.005],
+        "S0": [0, 1000],
+    }
+
+    for i, j in enumerate(dict_ivim_params):
+        im = dict_ivim_params[j]
+        cax = axes[i].imshow(
+            im,
+            origin="lower",
+            clim=lim_dict[j],
+            cmap="gray",
+            interpolation="nearest",
+        )
+        axes[i].set_title("Map for {}".format(j))
+        # TODO: Colorbar
+        fig.colorbar(cax, ax=axes[i])
+
+    return fig
+
+
 def plot_map(raw_data, variable, limits, title) -> plt.Figure:
     fig, ax = plt.subplots(1)
     lower, upper = limits
@@ -56,6 +83,9 @@ def plot_map(raw_data, variable, limits, title) -> plt.Figure:
         interpolation="nearest",
     )
     fig.colorbar(im)
+
+    # TODO: Set fig title
+
     return fig
 
 

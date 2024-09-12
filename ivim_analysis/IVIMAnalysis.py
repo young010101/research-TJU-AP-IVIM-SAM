@@ -1,3 +1,4 @@
+from typing import Any, Dict
 import numpy as np
 import nibabel as nib
 from matplotlib import pyplot as plt
@@ -8,7 +9,7 @@ import os
 from dipy.reconst.ivim import IvimModel
 from dipy.core.gradients import gradient_table
 
-from ivim_analysis.gen_mask import generate_mask, plot_map_roi, plot_map
+from ivim_analysis.gen_mask import generate_mask, plot_map_roi, plot_map, plot_ivim
 
 
 class IVIMAnalysis:
@@ -26,23 +27,23 @@ class IVIMAnalysis:
         rad: int,
         patient_id: str,
     ):
-        self.nii_path = nii_path
-        self.pancreas_slice = pancreas_slice
-        self.x_roi = x_roi
-        self.y_roi = y_roi
-        self.rad = rad
-        self.patient_id = patient_id
-        self.img = nib.load(self.nii_path)
-        self.img_data = self.img.get_fdata()
-        self.mask_roi = None
-        self.ivimfit = None
-        self.bvals = None
-        self.bvecs = None
-        self.data_slice = None
-        self.estimated_params_roi = None
-        self.ivim_params_maps = None  # Store the IVIM parameters, use class param_maps to store the parameters
-        self.pickle_ivim_path = None
-        self.dict_ivim_params = None
+        self.nii_path: str = nii_path
+        self.pancreas_slice: int = pancreas_slice
+        self.x_roi: int = x_roi
+        self.y_roi: int = y_roi
+        self.rad: int = rad
+        self.patient_id: str = patient_id
+        self.img: nib.Nifti1Image = nib.load(self.nii_path)
+        self.img_data: np.ndarray = self.img.get_fdata()
+        self.mask_roi: np.ndarray = None
+        self.ivimfit: Any = None
+        self.bvals: np.ndarray = None
+        self.bvecs: np.ndarray = None
+        self.data_slice: np.ndarray = None
+        self.estimated_params_roi: np.ndarray = None
+        self.ivim_params_maps: Any = None
+        self.pickle_ivim_path: str = None
+        self.dict_ivim_params: Dict[str, np.ndarray] = None
 
     class param_maps:
         """Also can use dictionary to store the parameters"""
@@ -100,6 +101,10 @@ class IVIMAnalysis:
 
         self.pickle_ivim_path = pickle_ivim_path
 
+    def plot_ivim(self) -> plt.Figure:
+        return plot_ivim(self.dict_ivim_params)
+
+    @DeprecationWarning
     def plot_map(
         self,
         map_data: np.ndarray,
@@ -109,6 +114,7 @@ class IVIMAnalysis:
     ):
         plot_map(map_data, title, lim, filename)
 
+    @DeprecationWarning
     def plot_maps(self):
         lim = [(0, 10000), (0, 1), (0, 0.01), (0, 0.001)]
         for key, value, lim in zip(
@@ -124,6 +130,7 @@ class IVIMAnalysis:
             # plot_map(self.ivimfit.D_star, "D*", (0, 0.01), "perfusion_coeff")
             # plot_map(self.ivimfit.D, "D", (0, 0.001), "diffusion_coeff")
 
+    @DeprecationWarning
     def plot_maps_roi(self):
         plot_map_roi(
             self.ivimfit.S0_predicted,
@@ -174,7 +181,7 @@ class IVIMAnalysis:
                 "D_star": self.ivim_params_maps.D_star,
                 "D": self.ivim_params_maps.D,
             }
-            self.plot_maps()
+            # self.plot_maps()
             return True
         return False
 
@@ -185,6 +192,7 @@ class IVIMAnalysis:
         load_from_pickle: bool = False,
         pickle_ivim_path: str = None,
         save_ivim_params: bool = False,
+        is_plot: bool = True,
     ):
         self.generate_roi_mask()
         self.bvals = bvals
@@ -200,7 +208,9 @@ class IVIMAnalysis:
             self.fit_ivim_model(bvals, bvecs)
 
         # self.preprocess_data()
-        self.plot_maps()
+        if is_plot:
+            # self.plot_maps()
+            self.plot_ivim()
         self.estimated_params_of_roi()
         if (
             save_ivim_params
