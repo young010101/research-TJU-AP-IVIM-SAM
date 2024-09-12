@@ -21,14 +21,14 @@ class IVIMAnalysis:
     def __init__(
         self,
         nii_path: str,
-        pancreas_slice: int,
+        pancreas_slice_idx: int,
         x_roi: int,
         y_roi: int,
         rad: int,
         patient_id: str,
     ):
         self.nii_path: str = nii_path
-        self.pancreas_slice: int = pancreas_slice
+        self.pancreas_slice_idx: int = pancreas_slice_idx
         self.x_roi: int = x_roi
         self.y_roi: int = y_roi
         self.rad: int = rad
@@ -39,7 +39,6 @@ class IVIMAnalysis:
         self.ivimfit: Any = None
         self.bvals: np.ndarray = None
         self.bvecs: np.ndarray = None
-        self.data_slice: np.ndarray = None
         self.estimated_params_roi: np.ndarray = None
         self.ivim_params_maps: Any = None
         self.pickle_ivim_path: str = None
@@ -70,8 +69,8 @@ class IVIMAnalysis:
         gtab = gradient_table(bvals, bvecs, b0_threshold=0)
         ivimmodel = IvimModel(gtab, fit_method="trr")
         # !Only one slice is used for now
-        self.data_slice = self.img_data[:, :, self.pancreas_slice, :]
-        self.ivimfit = ivimmodel.fit(self.data_slice)
+        self.pancreas_slice = self.img_data[:, :, self.pancreas_slice_idx, :]
+        self.ivimfit = ivimmodel.fit(self.pancreas_slice)
         self.ivim_params_maps = self.param_maps(
             self.ivimfit.S0_predicted,
             self.ivimfit.perfusion_fraction,
@@ -101,10 +100,15 @@ class IVIMAnalysis:
 
         self.pickle_ivim_path = pickle_ivim_path
 
+    # getter data_slice by property
+    @property
+    def pancreas_slice(self) -> np.ndarray:
+        self._pancreas_slice = self.img_data[:, :, self.pancreas_slice_idx, :]
+        return self._pancreas_slice
+
     def plot_ivim(self) -> plt.Figure:
         return plot_ivim(self.dict_ivim_params)
 
-    @DeprecationWarning
     def plot_map(
         self,
         map_data: np.ndarray,
@@ -141,7 +145,7 @@ class IVIMAnalysis:
             self.y_roi,
         )
         plot_map_roi(
-            self.data_slice[:, :, 0],
+            self.pancreas_slice[:, :, 0],
             "Measured S0",
             (0, 10000),
             "measured_S0",
@@ -219,7 +223,7 @@ class IVIMAnalysis:
         ):
             self.save_ivim_params()
 
-    def plt_circle_roi(self):
+    def plot_circle_roi(self):
         """plot the ROI circle on the image"""
         x_roi = self.x_roi
         y_roi = self.y_roi
@@ -233,13 +237,47 @@ class IVIMAnalysis:
             edgecolors="r",
         )  # circle ROI
 
+    def plot_multi_roi(self, circles: list):
+        """plot multiple ROIs on the image
+
+        for simple, circles is a list of tuples (x_roi, y_roi, rad),
+        where x_roi, y_roi are the center of the circle and rad is the radius
+        Note: size of list is the number of ROIs, which is 3
+        """
+        for circle in circles:
+            x_roi, y_roi, rad = circle
+            plt.scatter(
+                x_roi,
+                y_roi,
+                marker="o",
+                s=rad**2 * pi,
+                facecolors="None",
+                edgecolors="r",
+            )
+
+    def plot_pancreas_slice(self, plot_roi: bool = False, circles: list = None):
+        plt.imshow(self.pancreas_slice[:, :, 0], "gray")
+
+        if plot_roi:
+            # self.plot_circle_roi()
+            # TODO: circle should be a parameter while class initialization
+            if circles is None:
+                circles = [
+                    (self.x_roi, self.y_roi, self.rad),
+                    (100, 100, 5),
+                    (200, 200, 5),
+                ]
+            self.plot_multi_roi(circles)
+
+    @DeprecationWarning
     def b0_plot(self):
         """plot the b0 image"""
-        plt.imshow(self.img_data[:, :, self.pancreas_slice, 1], "gray")
+        plt.imshow(self.img_data[:, :, self.pancreas_slice_idx, 1], "gray")
 
+    @DeprecationWarning
     def b0_plot_roi(self):
         self.b0_plot()
-        self.plt_circle_roi(x_roi, y_roi, rad)
+        self.plot_circle_roi(self.x_roi, self.y_roi, self.rad)
         plt.show()
 
     def plot_b_intensities(self):
@@ -254,7 +292,7 @@ class IVIMAnalysis:
         intensive_of_10b = np.zeros(num_bval)
         for i_bval in range(num_bval):
             intense_roi = (
-                np.sum(self.img_data[:, :, self.pancreas_slice, i_bval] * mask_roi)
+                np.sum(self.img_data[:, :, self.pancreas_slice_idx, i_bval] * mask_roi)
                 / mask_roi.sum()
             )
             # intensive_of_10b[i_bval-9] = intense_roi
@@ -304,11 +342,12 @@ class IVIMAnalysis:
 
 
 if __name__ == "__main__":
-    nii_path = "ST0_A01-AB+MRCP+CE-Q_20240120092423_11.nii.gz"
-    x_roi = 129
-    y_roi = 156
-    rad = 4
-    # bvals, bvecs = read_bvals_bvecs('bvals.txt', 'bvecs.txt')
+    print("Hello")
+    # nii_path = "ST0_A01-AB+MRCP+CE-Q_20240120092423_11.nii.gz"
+    # x_roi = 129
+    # y_roi = 156
+    # rad = 4
+    # # bvals, bvecs = read_bvals_bvecs('bvals.txt', 'bvecs.txt')
 
-    analysis = IVIMAnalysis(nii_path, x_roi, y_roi, rad)
-    # analysis.run_analysis(bvals, bvecs)
+    # analysis = IVIMAnalysis(nii_path, x_roi, y_roi, rad)
+    # # analysis.run_analysis(bvals, bvecs)
