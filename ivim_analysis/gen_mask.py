@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 import os
 from math import pi
 
-def generate_mask(img_height,img_width,radius,center_x,center_y):
+
+def generate_mask(img_height, img_width, radius, center_x, center_y):
     """generate a circle mask.
 
     Parameters
@@ -34,39 +35,45 @@ def generate_mask(img_height,img_width,radius,center_x,center_y):
            [true, true]])
     """
 
- 
-    y,x=np.ogrid[0:img_height,0:img_width]
- 
+    y, x = np.ogrid[0:img_height, 0:img_width]
+
     # circle mask
- 
-    mask = (x-center_x)**2+(y-center_y)**2<=radius**2
- 
+
+    mask = (x - center_x) ** 2 + (y - center_y) ** 2 <= radius**2
+
     return mask
 
 
-def plot_map(raw_data, variable, limits, title):
+def plot_map(raw_data, variable, limits, title) -> plt.Figure:
     fig, ax = plt.subplots(1)
     lower, upper = limits
-    ax.set_title('Map for {}'.format(variable))
-    im = ax.imshow(raw_data.T, origin='lower', clim=(lower, upper),
-                   cmap="gray", interpolation='nearest')
+    ax.set_title("Map for {}".format(variable))
+    im = ax.imshow(
+        raw_data.T,
+        origin="lower",
+        clim=(lower, upper),
+        cmap="gray",
+        interpolation="nearest",
+    )
     fig.colorbar(im)
     return fig
 
 
 def plot_map_roi(raw_data, variable, limits, filename, x_roi=100, y_roi=100, radius=5):
     """plot map with roi
-    
+
     Parametes
     ---------
     filename: str
     filename without roi and format"""
-    plot_map(raw_data, variable, limits, filename+'_roi.png')
-    plt.scatter(y_roi, x_roi, marker='o', s=radius**2*pi, edgecolors='r', facecolors='None')
+    plot_map(raw_data, variable, limits, filename + "_roi.png")
+    plt.scatter(
+        y_roi, x_roi, marker="o", s=radius**2 * pi, edgecolors="r", facecolors="None"
+    )
 
 
 # Function to save a figure
-def save_figure(fig, filename, output_dir='output'):
+def save_figure(fig, filename, output_dir="output"):
     # Save the figure to the output directory with the specified filename
     filepath = os.path.join(output_dir, filename)
     fig.savefig(filepath)
