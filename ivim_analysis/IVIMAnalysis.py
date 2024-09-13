@@ -369,39 +369,85 @@ class IVIMAnalysis:
         assert bvals is not None, "b-values not found"
         assert len(bvals) == num_bval, "b-values length mismatch"
         assert len(bvals) == len(intensive_of_10b), "b-values length mismatch"
+
+        # TODO: Fix the x-axis
         if len(bvals) == 10:
-            plt.scatter(
-                [0, 20, 50, 80, 150, 200, 500, 800, 1000, 1500], intensive_of_10b
-            )
+            tmp_bvals = [0, 20, 50, 80, 150, 200, 500, 800, 1000, 1500]
         else:
             # !This part is broken
-            plt.scatter(
-                [0, 10, 20, 50, 80, 150, 200, 500, 800, 1000, 1500], intensive_of_10b
-            )
-        # plt.scatter(bvals.sort(),intensive_of_10b)
+            tmp_bvals = [0, 10, 20, 50, 80, 150, 200, 500, 800, 1000, 1500]
+        plt.scatter(tmp_bvals, intensive_of_10b)
+
+        from sklearn.linear_model import LinearRegression
+
+        reg = LinearRegression().fit(
+            np.array(tmp_bvals).reshape(-1, 1), intensive_of_10b
+        )
+        print(reg.coef_, reg.intercept_)
+        x = np.array(tmp_bvals)
+        y = reg.coef_ * x + reg.intercept_
+        plt.plot(x, y, "-r")
 
     @property
     def estimated_params_roi(self):
         """List all poisition of where value is true"""
-        estimated_params_roi = {}
+        estimated_params_roi_all = {}
+        list_roi_name = ["head", "body", "tail"]
 
-        mask_roi = self.mask_roi
+        multi_roi = self.mask_multi_roi
 
-        for i in self.dict_ivim_params:
-            estimated_params_roi[i] = (
-                np.sum(np.nan_to_num(self.dict_ivim_params[i][:, :]) * mask_roi)
-                / mask_roi.sum()
-            )
+        for idx, j in enumerate(list_roi_name):
+            estimated_params_roi_all[j] = {}
+            roi = multi_roi[idx]
+            for i in self.dict_ivim_params:
+                estimated_params_roi_all[j][i] = (
+                    np.sum(np.nan_to_num(self.dict_ivim_params[i][:, :]) * roi)
+                    / roi.sum()
+                )
 
-        self._estimated_params_roi = estimated_params_roi
+        # for i in self.dict_ivim_params:
+        #     estimated_params_roi[i] = (
+        #         np.sum(np.nan_to_num(self.dict_ivim_params[i][:, :]) * mask_roi)
+        #         / mask_roi.sum()
+        #     )
+
+        self._estimated_params_roi = estimated_params_roi_all
 
         return self._estimated_params_roi
 
-    def print_estimated_params_roi(self):
+    def print_estimated_params_roi(
+        self, save_ivim_params: bool = False, output_path: str = None
+    ):
         e_p = self.estimated_params_roi
-        print("Estimated parameter:")
-        for param in e_p:
-            print(f"{param}: {e_p[param]}")
+        print(f"{self.patient_id} estimated parameter:")
+        # for param in e_p:
+        #     print(f"{param}: {e_p[param]}")
+        for roi in e_p:
+            print(f"{roi}:")
+            for param in e_p[roi]:
+                print(f"{param}: {e_p[roi][param]}")
+
+        if output_path is None:
+            from datetime import date
+
+            output_path = os.path.join(
+                "..", "output", str(date.today()), self.patient_id
+            )
+            txt_path = os.path.join(output_path, "ivim_params.txt")
+            json_path = os.path.join(output_path, "ivim_params.json")
+        if save_ivim_params:
+            with open(txt_path, "w") as f:
+                for roi in e_p:
+                    f.write(f"{roi}:\n")
+                    for param in e_p[roi]:
+                        f.write(f"{param}: {e_p[roi][param]}\n")
+
+        # save the estimated parameters to json file
+        if save_ivim_params:
+            with open(json_path, "w") as f:
+                import json
+
+                json.dump(e_p, f)
 
 
 if __name__ == "__main__":
