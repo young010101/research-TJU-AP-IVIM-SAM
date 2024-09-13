@@ -271,7 +271,7 @@ class IVIMAnalysis:
             edgecolors="r",
         )  # circle ROI
 
-    def plot_multi_roi(self, circles: list):
+    def plot_multi_roi(self, ax, circles: list):
         """plot multiple ROIs on the image
 
         for simple, circles is a list of tuples (x_roi, y_roi, rad),
@@ -280,7 +280,7 @@ class IVIMAnalysis:
         """
         for circle in circles:
             x_roi, y_roi, rad = circle
-            plt.scatter(
+            ax.scatter(
                 x_roi,
                 y_roi,
                 marker="o",
@@ -289,8 +289,8 @@ class IVIMAnalysis:
                 edgecolors="r",
             )
 
-    def plot_pancreas_slice(self, plot_roi: bool = False, circles: list = None):
-        plt.imshow(self.pancreas_slice[:, :, 0], "gray")
+    def plot_pancreas_slice(self, ax, plot_roi: bool = False, circles: list = None):
+        ax.imshow(self.pancreas_slice[:, :, 0], "gray")
 
         if plot_roi:
             # self.plot_circle_roi()
@@ -298,10 +298,10 @@ class IVIMAnalysis:
             if circles is None:
                 circles = [
                     (self.x_roi, self.y_roi, self.rad),
-                    (100, 100, 5),
-                    (200, 200, 5),
+                    (130, 130, 5),
+                    (130, 110, 5),
                 ]
-            self.plot_multi_roi(circles)
+            self.plot_multi_roi(ax, circles)
 
     @DeprecationWarning
     def b0_plot(self):
