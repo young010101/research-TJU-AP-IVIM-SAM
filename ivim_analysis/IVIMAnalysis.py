@@ -347,30 +347,61 @@ class IVIMAnalysis:
             )
         # plt.scatter(bvals.sort(),intensive_of_10b)
 
-    @property
-    def estimated_params_roi(self, is_print=False):
-        """List all poisition of where value is true"""
-        estimated_params_roi = []
+    def plot_log_b(self):
+        """plot the b-value intensities"""
+        if self.mask_roi is None:
+            self.generate_roi_mask()
+            print("!Warning! ROI mask generated")
+        assert self.mask_roi is not None, "Generate the ROI mask first"
+        mask_roi = self.mask_roi
+        num_bval = self.img_data.shape[3]
+        print(num_bval)
+        intensive_of_10b = np.zeros(num_bval)
+        for i_bval in range(num_bval):
+            intense_roi = (
+                np.sum(self.img_data[:, :, self.pancreas_slice_idx, i_bval] * mask_roi)
+                / mask_roi.sum()
+            )
+            # intensive_of_10b[i_bval-9] = intense_roi
+            intensive_of_10b[i_bval - num_bval + 1] = np.log(intense_roi)
 
-        if self.ivimfit is None:
-            print("Run the IVIM model first.")
-            return None
+        bvals = self.bvals
+        assert bvals is not None, "b-values not found"
+        assert len(bvals) == num_bval, "b-values length mismatch"
+        assert len(bvals) == len(intensive_of_10b), "b-values length mismatch"
+        if len(bvals) == 10:
+            plt.scatter(
+                [0, 20, 50, 80, 150, 200, 500, 800, 1000, 1500], intensive_of_10b
+            )
+        else:
+            # !This part is broken
+            plt.scatter(
+                [0, 10, 20, 50, 80, 150, 200, 500, 800, 1000, 1500], intensive_of_10b
+            )
+        # plt.scatter(bvals.sort(),intensive_of_10b)
+
+    @property
+    def estimated_params_roi(self):
+        """List all poisition of where value is true"""
+        estimated_params_roi = {}
 
         mask_roi = self.mask_roi
 
-        for i in range(self.dict_ivim_params):
-            estimated_params_roi.append(
-                np.sum(np.nan_to_num(self.dict_ivim_params[i][:, :, i]) * mask_roi)
+        for i in self.dict_ivim_params:
+            estimated_params_roi[i] = (
+                np.sum(np.nan_to_num(self.dict_ivim_params[i][:, :]) * mask_roi)
                 / mask_roi.sum()
             )
-
-        if is_print:
-            for param in estimated_params_roi:
-                print(f"Estimated parameter: {param}")
 
         self._estimated_params_roi = estimated_params_roi
 
         return self._estimated_params_roi
+
+    def print_estimated_params_roi(self):
+        e_p = self.estimated_params_roi
+        print("Estimated parameter:")
+        for param in e_p:
+            print(f"{param}: {e_p[param]}")
 
 
 if __name__ == "__main__":
