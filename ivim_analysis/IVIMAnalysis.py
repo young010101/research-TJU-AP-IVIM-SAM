@@ -296,6 +296,8 @@ class IVIMAnalysis:
             # self.plot_circle_roi()
             # TODO: circle should be a parameter while class initialization
             if circles is None:
+                # !yell out warning
+                print("No circles found. Using default circles")
                 circles = [
                     (self.x_roi, self.y_roi, self.rad),
                     (130, 130, 5),
