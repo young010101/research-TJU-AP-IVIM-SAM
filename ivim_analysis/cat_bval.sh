@@ -27,6 +27,12 @@ fi
 
 mkdir -p "$OUTPUT_BASE_DIR"
 
+# Create the IVIM directory in the output location
+IVIM_folder="../static_IVIM"
+IVIM_OUTPUT_DIR="${OUTPUT_BASE_DIR}/${IVIM_folder}"
+mkdir -p "$IVIM_OUTPUT_DIR"
+rm -rf "$IVIM_OUTPUT_DIR"/*
+
 BASE_LOG_FILE="cat_bval.log"
 LOG_FILE="${OUTPUT_BASE_DIR}/${BASE_LOG_FILE}"
 
@@ -97,11 +103,8 @@ for patient_id in *; do
                 # Since we found a file with array size >=10, set the flag to false
                 all_files_less_than_10=false
 
-                # Create the patient's directory in the output location
-                IVIM_folder="../static_IVIM"
-                IVIM_OUTPUT_DIR="${OUTPUT_BASE_DIR}/${IVIM_folder}"
-                mkdir -p "$IVIM_OUTPUT_DIR"
                 cp "$nii_file" "${IVIM_OUTPUT_DIR}/${base_filename_1}_${array_size}.nii.gz"
+                echo "$base_filename_1 $first_line" >>"${IVIM_OUTPUT_DIR}/patient.bval"
             fi
 
             # Output the values
