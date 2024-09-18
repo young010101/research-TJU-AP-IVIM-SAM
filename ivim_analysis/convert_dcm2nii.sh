@@ -4,11 +4,12 @@
 #DICOM_DIR="/path/to/dicom/folder"
 # DICOM_DIR="/data/users/cyang/acute_pancreatitis/unprocess/dcm/lizhen_feng_0305/DICOM"
 # DICOM_DIR="/data/users/cyang/acute_pancreatitis/unprocess/dcm/20240821"
-DICOM_DIR="/data/users/cyang/acute_pancreatitis/unprocess/dcm/paitents_3_240822/DICOM"
+# DICOM_DIR="/data/users/cyang/acute_pancreatitis/unprocess/dcm/paitents_3_240822/DICOM"
+DICOM_DIR="/data/users/cyang/acute_pancreatitis/unprocess/dcm/ivimap/ivimap/apivim"
 
 # Specify the folder where the NIfTI output should be stored
 # NIFTI_DIR="/data/users/cyang/acute_pancreatitis/unprocess/nii_tmp_2/"
-NIFTI_DIR="/data/users/cyang/acute_pancreatitis/unprocess/patient_mid/"
+NIFTI_DIR="/data/users/cyang/acute_pancreatitis/unprocess/nii/p9_0918_2"
 
 ST0_DIR="ST0"
 
@@ -35,7 +36,8 @@ for patient_id in *; do
 
         # Convert all DICOM files for the patient
         # dcm2niix -b y -f "%s_%p_%s" -o "$output_dir" -z y "$patient_id/$ST0_DIR"
-        dcm2niix -b y -o "$output_dir" -z y "$patient_id/$ST0_DIR"
+        dcm2niix -b y -o "$output_dir" -z y "$patient_id"
+        # dcm2niix -b y -o "$output_dir" -z y "$patient_id/$ST0_DIR"
     fi
 done
 
@@ -47,3 +49,4 @@ elapsed_time=$((end_time - start_time))
 
 # Print the conversion completion message and the elapsed time
 echo "Conversion completed in $elapsed_time seconds."
+echo "NIfTI files are stored in: $NIFTI_DIR"
