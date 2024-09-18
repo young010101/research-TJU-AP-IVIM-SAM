@@ -1,23 +1,29 @@
 #!/bin/bash
 
 # Get the current date in YYYYMMDD format
-CURRENT_DATE="20240918_190519"
+CURRENT_DATE=$(date +%Y%m%d_%H%M%S)
+FIX_CURRENT_DATE="20240918_190519"
 
 # Specify the base folder where the NIfTI output is stored
 BASE_NIFTI_DIR="/data/users/cyang/acute_pancreatitis/unprocess/nii"
 
 # Combine the base directory with the current date
 TAG="ivimap_9_patients"
-NIFTI_DIR="${BASE_NIFTI_DIR}/${TAG}/${CURRENT_DATE}"
+NIFTI_DIR="${BASE_NIFTI_DIR}/${TAG}/${FIX_CURRENT_DATE}"
 
 # Change to the NIfTI directory
 cd "$NIFTI_DIR" || { echo "NIFTI directory not found!"; exit 1; }
 
 # Base directory for the bval files
-OUTPUT_BASE_DIR="${BASE_NIFTI_DIR}/../bval/${TAG}/${CURRENT_DATE}"
+OUTPUT_BASE_DIR="${BASE_NIFTI_DIR}/../bval/${TAG}/${FIX_CURRENT_DATE}/${CURRENT_DATE}"
 mkdir -p "$OUTPUT_BASE_DIR"
+
+BASE_LOG_FILE="cat_bval.log"
+LOG_FILE="${OUTPUT_BASE_DIR}/${BASE_LOG_FILE}"
+
 # Clear $OUTPUT_BASE_DIR
 rm -rf "$OUTPUT_BASE_DIR"/*
+echo "Clearing $OUTPUT_BASE_DIR" >> "$LOG_FILE"
 
 # Loop through each patient's directory
 for patient_id in *; do
@@ -26,7 +32,7 @@ for patient_id in *; do
         echo "Processing directory: $patient_id"
 
         base_filename_1="${patient_id%%-*}"
-        echo "Base filename: $base_filename_1"
+        echo "Base filename: $base_filename_1" >> "$LOG_FILE"
 
     # Loop through each .bval file in the patient directory
     for file in *.bval; do
@@ -40,12 +46,12 @@ for patient_id in *; do
 
             # Extract the base file name without extension
             base_filename="${file%.*}"
-            echo "Base filename: $base_filename"
+            echo "Base filename: $base_filename" >> "$LOG_FILE"
 
             # IFS='.' read -r -a array <<< "$file"
             # echo "IVIM filename: ${array[0]}"
 
-            cat "$file"
+            cat "$file" >> "$LOG_FILE"
 
             # Create the patient's directory in the output location
             patient_output_dir="${OUTPUT_BASE_DIR}/${base_filename_1}"
@@ -62,7 +68,7 @@ for patient_id in *; do
                 echo "Warning: Corresponding .nii.gz file not found for $file"
             fi
         done
-        echo "-----------------------------------"
+        echo "-----------------------------------" >> "$LOG_FILE"
         cd ..
     fi
 done
