@@ -15,7 +15,13 @@ NIFTI_DIR="${BASE_NIFTI_DIR}/${TAG}/${FIX_CURRENT_DATE}"
 cd "$NIFTI_DIR" || { echo "NIFTI directory not found!"; exit 1; }
 
 # Base directory for the bval files
-OUTPUT_BASE_DIR="${BASE_NIFTI_DIR}/../bval/${TAG}/${FIX_CURRENT_DATE}/${CURRENT_DATE}"
+FLAG_STATIC_DIR=true
+if [ "$FLAG_STATIC_DIR" = true ]; then
+    OUTPUT_BASE_DIR="${BASE_NIFTI_DIR}/../bval/${TAG}/static"
+else
+    OUTPUT_BASE_DIR="${BASE_NIFTI_DIR}/../bval/${TAG}/${FIX_CURRENT_DATE}/${CURRENT_DATE}"
+fi
+
 mkdir -p "$OUTPUT_BASE_DIR"
 
 BASE_LOG_FILE="cat_bval.log"
@@ -63,7 +69,7 @@ for patient_id in *; do
             
             # Output the array size
             array_size="${#bval_array[@]}"
-            echo "Array size: $array_size" >> "$LOG_FILE"
+            echo "# of b: $array_size" >> "$LOG_FILE"
 
             # Check if array size >= 10
             if [ "$array_size" -ge 10 ]; then
