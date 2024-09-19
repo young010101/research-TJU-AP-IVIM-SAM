@@ -1,12 +1,12 @@
 7
 1.25e11
-DongWeiLong 刘伯林_10.nii.gz  9 129  156  4
-LiuBoLin    刘军_11.nii.gz    9 129  156  4
-XuJiaHeng   孙金鹿_11.nii.gz  9 129  156  4
-ZhangXiFeng 张喜凤_10.nii.gz   9 129  156  4
+DongWeiLong 刘伯林_10.nii.gz  13 129  156  4
+LiuBoLin    刘军_11.nii.gz    13 129  156  4
+XuJiaHeng   孙金鹿_11.nii.gz  16 129  156  4
+ZhangXiFeng 张喜凤_10.nii.gz   12 129  156  4
 ZhangXiFeng 徐家恒_11.nii.gz   9 129  156  4
-ZhangXiFeng 董维龙_11.nii.gz  9 129  156  4
-ZhangXiFeng 霍东杙_11.nii.gz  9 129  156  4
+ZhangXiFeng 董维龙_11.nii.gz  10 129  156  4
+ZhangXiFeng 霍东杙_11.nii.gz  13 129  156  4
 [!] Your program should not read this line, as all 10 patients were already listed
 and there is no further information to be specified. So you can put comments here.
 This file contains an interesting 3-body system.

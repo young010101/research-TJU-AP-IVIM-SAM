@@ -10,6 +10,9 @@ from dipy.reconst.ivim import IvimModel
 from dipy.core.gradients import gradient_table
 
 from ivim_analysis.gen_mask import generate_mask, plot_map_roi, plot_map, plot_ivim
+from ivim_analysis.utils.patient_name_parse import chinese_to_pinyin
+
+list_roi_name = ["tail", "body", "head"]
 
 
 class IVIMAnalysis:
@@ -35,8 +38,11 @@ class IVIMAnalysis:
         self.y_roi: int = y_roi
         self.rad: int = rad
         self.patient_id: str = patient_id
+        self.patient_name_pinyin: str = chinese_to_pinyin(patient_id)
         self.img: nib.Nifti1Image = nib.load(self.nii_path)
-        self.img_data: np.ndarray = self.img.get_fdata()
+        self.un_rot_data: np.ndarray = self.img.get_fdata()
+        # rotate the image
+        self.img_data = np.rot90(self.un_rot_data, 1)
         # self.mask_roi: np.ndarray = None
         self.ivimfit: Any = None
         self.bvals: np.ndarray = None
@@ -228,23 +234,27 @@ class IVIMAnalysis:
 
     def run_analysis(
         self,
-        bvals,
-        bvecs,
         load_from_pickle: bool = False,
         pickle_ivim_path: str = None,
         save_ivim_params: bool = False,
         is_plot: bool = True,
     ):
         # self.generate_roi_mask()
-        self.bvals = bvals
-        self.bvecs = bvecs
+        print(
+            f"Running analysis for {self.patient_name_pinyin}, saving to {pickle_ivim_path}"
+        )
+
+        bvals = self.bvals
+        bvecs = self.bvecs
         not_fount = False
         if load_from_pickle:
-            print("Loading data from pickle file")
+            print(f"Loading {self.patient_name_pinyin} data from pickle file")
             if self.check_pickle_and_load(pickle_ivim_path):
-                print("Data loaded successfully")
+                print(f"{self.patient_name_pinyin} Data loaded successfully")
             else:
-                print("Pickle file not found. Running the analysis.")
+                print(
+                    f"{pickle_ivim_path} Pickle file not found. Running the analysis."
+                )
                 self.fit_ivim_model(bvals, bvecs)  # Consumes a lot of time
                 not_fount = True
         else:
@@ -260,7 +270,10 @@ class IVIMAnalysis:
             and self.ivim_params_maps is not None
             and (load_from_pickle == False or not_fount)
         ):
-            self.save_ivim_params()
+            self.save_ivim_params(pickle_ivim_path)
+            print(f"{self.patient_name_pinyin} IVIM parameters saved to pickle file")
+        else:
+            print("IVIM parameters not saved")
 
     def plot_circle_roi(self):
         """plot the ROI circle on the image"""
@@ -276,7 +289,7 @@ class IVIMAnalysis:
             edgecolors="r",
         )  # circle ROI
 
-    def plot_multi_roi(self, ax, circles: list):
+    def plot_multi_roi(self, ax, circles: list, is_text: bool = True):
         """plot multiple ROIs on the image
 
         for simple, circles is a list of tuples (x_roi, y_roi, rad),
@@ -293,25 +306,37 @@ class IVIMAnalysis:
                 facecolors="None",
                 edgecolors="r",
             )
-            ax.text(
-                x_roi, y_roi, rad, f"{x_roi}, {y_roi}, {rad}", fontsize=8, color="red"
-            )
+            if is_text:
+                ax.text(
+                    x_roi,
+                    y_roi,
+                    f"{x_roi}, {y_roi}",
+                    fontsize=8,
+                    color="red",
+                )
 
-    def plot_pancreas_slice(self, ax, plot_roi: bool = False, circles: list = None):
+    def plot_pancreas_slice(
+        self,
+        ax,
+        plot_roi: bool = False,
+        circles: list = None,
+        is_text: bool = True,
+        is_title: bool = False,
+    ):
         ax.imshow(self.pancreas_slice[:, :, 0], "gray")
+        if is_title:
+            # TODO
+            print("Warning! Title is not implemented")
+            # ax.set_title(self.patient_id)
 
         if plot_roi:
-            # self.plot_circle_roi()
-            # TODO: circle should be a parameter while class initialization
             if circles is None:
-                # !yell out warning
-                print("No circles found. Using default circles")
-                circles = [
-                    (self.x_roi, self.y_roi, self.rad),
-                    (130, 130, 5),
-                    (130, 110, 5),
-                ]
-            self.plot_multi_roi(ax, circles)
+                circles = self.circles
+                assert circles is not None, "No circles found"
+                assert circles != [], "No circles found"
+            else:
+                print("Warning! Using the given circles")
+            self.plot_multi_roi(ax, circles, is_text=is_text)
 
     @DeprecationWarning
     def b0_plot(self):
@@ -346,15 +371,16 @@ class IVIMAnalysis:
         assert bvals is not None, "b-values not found"
         assert len(bvals) == num_bval, "b-values length mismatch"
         assert len(bvals) == len(intensive_of_10b), "b-values length mismatch"
-        if len(bvals) == 10:
-            plt.scatter(
-                [0, 20, 50, 80, 150, 200, 500, 800, 1000, 1500], intensive_of_10b
-            )
-        else:
-            # !This part is broken
-            plt.scatter(
-                [0, 10, 20, 50, 80, 150, 200, 500, 800, 1000, 1500], intensive_of_10b
-            )
+        # TODO: Fix the x-axis
+        # if len(bvals) == 10:
+        #     plt.scatter(
+        #         [0, 20, 50, 80, 150, 200, 500, 800, 1000, 1500], intensive_of_10b
+        #     )
+        # else:
+        #     # !This part is broken
+        #     plt.scatter(
+        #         [0, 10, 20, 50, 80, 150, 200, 500, 800, 1000, 1500], intensive_of_10b
+        #     )
         # plt.scatter(bvals.sort(),intensive_of_10b)
 
     def plot_log_b(self, i_circle: int = 0):
@@ -388,7 +414,9 @@ class IVIMAnalysis:
         # else:
         #     # !This part is broken
         #     tmp_bvals = [0, 10, 20, 50, 80, 150, 200, 500, 800, 1000, 1500]
-        tmp_bvals = bvals
+        # move last element of bvals to the first
+        tmp_bvals = np.roll(bvals, 1)
+        print(tmp_bvals)
         plt.scatter(tmp_bvals, intensive_of_10b)
 
         from sklearn.linear_model import LinearRegression
@@ -402,14 +430,13 @@ class IVIMAnalysis:
         plt.plot(x, y, "-r")
         # set title
         plt.title(
-            f"Logarithm of b-value intensities {self.circles[0][0]}, {self.circles[0][1]}"
+            f"Logarithm of b-value intensities in {list_roi_name[i_circle]} {self.circles[i_circle][0]}, {self.circles[i_circle][1]}"
         )
 
     @property
     def estimated_params_roi(self):
         """List all poisition of where value is true"""
         estimated_params_roi_all = {}
-        list_roi_name = ["head", "body", "tail"]
 
         multi_roi = self.mask_multi_roi
 
@@ -450,8 +477,9 @@ class IVIMAnalysis:
             output_path = os.path.join(
                 "..", "output", str(date.today()), self.patient_id
             )
-            txt_path = os.path.join(output_path, "ivim_params.txt")
-            json_path = os.path.join(output_path, "ivim_params.json")
+
+        txt_path = os.path.join(output_path, "ivim_params.txt")
+        json_path = os.path.join(output_path, "ivim_params.json")
         if save_ivim_params:
             with open(txt_path, "w") as f:
                 for roi in e_p:
@@ -465,6 +493,10 @@ class IVIMAnalysis:
                 import json
 
                 json.dump(e_p, f)
+
+    def print_roi(self):
+        for circ, name in zip(self.circles, list_roi_name):
+            print(f"{name}: ROI: ({circ[0]}, {circ[1]}), rad: {circ[2]}")
 
 
 if __name__ == "__main__":
