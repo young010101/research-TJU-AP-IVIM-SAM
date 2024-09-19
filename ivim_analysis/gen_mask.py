@@ -44,9 +44,9 @@ def generate_mask(img_height, img_width, radius, center_x, center_y):
     return mask
 
 
-def plot_ivim(dict_ivim_params):
-    fig, axes = plt.subplots(2, 2)
-    axes = axes.flatten()
+def plot_ivim(dict_ivim_params, fig, axes, is_colorbar: bool = True) -> plt.Figure:
+    # fig, axes = plt.subplots(2, 2)
+    # axes = axes.flatten()
 
     lim_dict = {
         "D": [0, 0.001],
@@ -65,8 +65,8 @@ def plot_ivim(dict_ivim_params):
             interpolation="nearest",
         )
         axes[i].set_title("Map for {}".format(j))
-        # TODO: Colorbar
-        fig.colorbar(cax, ax=axes[i])
+        if is_colorbar:
+            fig.colorbar(cax, ax=axes[i])
 
     return fig
 

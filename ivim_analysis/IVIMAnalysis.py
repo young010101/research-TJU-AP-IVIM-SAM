@@ -150,7 +150,15 @@ class IVIMAnalysis:
         return self._pancreas_slice
 
     def plot_ivim(self) -> plt.Figure:
-        return plot_ivim(self.dict_ivim_params)
+
+        fig, axes = plt.subplots(2, 2)
+        axes = axes.flatten()
+        # x_roi, y_roi, rad = self.circles[0]
+        # self.plot_circle_roi(axes[0], x_roi, y_roi, rad)
+        for i, ax in enumerate(axes):
+            self.plot_multi_roi(ax, self.circles)
+
+        return plot_ivim(self.dict_ivim_params, fig, axes, is_colorbar=True)
 
     def plot_map(
         self,
@@ -275,12 +283,9 @@ class IVIMAnalysis:
         else:
             print("IVIM parameters not saved")
 
-    def plot_circle_roi(self):
+    def plot_circle_roi(self, ax, x_roi, y_roi, radius, is_text: bool = True):
         """plot the ROI circle on the image"""
-        x_roi = self.x_roi
-        y_roi = self.y_roi
-        radius = self.rad
-        plt.scatter(
+        ax.scatter(
             x_roi,
             y_roi,
             marker="o",
@@ -288,6 +293,15 @@ class IVIMAnalysis:
             facecolors="None",
             edgecolors="r",
         )  # circle ROI
+
+        if is_text:
+            ax.text(
+                x_roi,
+                y_roi,
+                f"{x_roi}, {y_roi}",
+                fontsize=8,
+                color="red",
+            )
 
     def plot_multi_roi(self, ax, circles: list, is_text: bool = True):
         """plot multiple ROIs on the image
@@ -298,22 +312,7 @@ class IVIMAnalysis:
         """
         for circle in circles:
             x_roi, y_roi, rad = circle
-            ax.scatter(
-                x_roi,
-                y_roi,
-                marker="o",
-                s=rad**2 * pi,
-                facecolors="None",
-                edgecolors="r",
-            )
-            if is_text:
-                ax.text(
-                    x_roi,
-                    y_roi,
-                    f"{x_roi}, {y_roi}",
-                    fontsize=8,
-                    color="red",
-                )
+            self.plot_circle_roi(ax, x_roi, y_roi, rad, is_text)
 
     def plot_pancreas_slice(
         self,
@@ -322,8 +321,9 @@ class IVIMAnalysis:
         circles: list = None,
         is_text: bool = True,
         is_title: bool = False,
+        cmap: str = "gray",
     ):
-        ax.imshow(self.pancreas_slice[:, :, 0], "gray")
+        ax.imshow(self.pancreas_slice[:, :, 0], cmap)
         if is_title:
             # TODO
             print("Warning! Title is not implemented")
@@ -469,7 +469,7 @@ class IVIMAnalysis:
         for roi in e_p:
             print(f"{roi}:")
             for param in e_p[roi]:
-                print(f"{param}: {e_p[roi][param]}")
+                print(f"\t{param}:\t\t{e_p[roi][param]:8f}")
 
         if output_path is None:
             from datetime import date
