@@ -19,19 +19,22 @@ class NPatients:
             for i in range(num):
                 info_patients.append(f.readline().split())
 
-        n_analyses = []
+        n_analyses = {}
         for i in range(num):
-            patient_id, nii_name, pancreas_slice, x_roi, y_roi, rad = info_patients[i]
+            _, nii_name, pancreas_slice, x_roi, y_roi, rad = info_patients[i]
+            patient_id = nii_name.split("_")[0]
+            num_b = nii_name.split("_")[1].split(".")[0]
             example_filename = os.path.join(path, nii_name)
             analysis = IVIMAnalysis(
                 example_filename,
                 int(pancreas_slice),
+                int(num_b),
                 int(x_roi),
                 int(y_roi),
                 int(rad),
                 patient_id,
             )
-            n_analyses.append(analysis)
+            n_analyses[patient_id] = analysis
 
         return n_analyses
 

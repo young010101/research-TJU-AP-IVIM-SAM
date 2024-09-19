@@ -22,6 +22,7 @@ class IVIMAnalysis:
         self,
         nii_path: str,
         pancreas_slice_idx: int,
+        num_b: int,
         x_roi: int,
         y_roi: int,
         rad: int,
@@ -29,6 +30,7 @@ class IVIMAnalysis:
     ):
         self.nii_path: str = nii_path
         self.pancreas_slice_idx: int = pancreas_slice_idx
+        self.num_bvals: int = num_b
         self.x_roi: int = x_roi
         self.y_roi: int = y_roi
         self.rad: int = rad
@@ -77,13 +79,15 @@ class IVIMAnalysis:
     @property
     def mask_multi_roi(self) -> List[np.ndarray]:
         """Generate mask for multiple ROIs"""
-        circles: list = None
-        if circles is None:
-            circles = [
-                (self.x_roi, self.y_roi, self.rad),
-                (100, 100, 5),
-                (200, 200, 5),
-            ]
+        # circles: list = None
+        # if circles is None:
+        #     circles = [
+        #         (self.x_roi, self.y_roi, self.rad),
+        #         (100, 100, 5),
+        #         (200, 200, 5),
+        #     ]
+        circles = self.circles
+
         i_h, i_w = self.img_data.shape[0], self.img_data.shape[1]
         mask_roi = []
         for circle in circles:
@@ -103,7 +107,6 @@ class IVIMAnalysis:
         gtab = gradient_table(bvals, bvecs, b0_threshold=0)
         ivimmodel = IvimModel(gtab, fit_method="trr")
         # !Only one slice is used for now
-        self.pancreas_slice = self.img_data[:, :, self.pancreas_slice_idx, :]
         self.ivimfit = ivimmodel.fit(self.pancreas_slice)
         self.ivim_params_maps = self.param_maps(
             self.ivimfit.S0_predicted,
@@ -235,6 +238,7 @@ class IVIMAnalysis:
         # self.generate_roi_mask()
         self.bvals = bvals
         self.bvecs = bvecs
+        not_fount = False
         if load_from_pickle:
             print("Loading data from pickle file")
             if self.check_pickle_and_load(pickle_ivim_path):
@@ -242,6 +246,7 @@ class IVIMAnalysis:
             else:
                 print("Pickle file not found. Running the analysis.")
                 self.fit_ivim_model(bvals, bvecs)  # Consumes a lot of time
+                not_fount = True
         else:
             self.fit_ivim_model(bvals, bvecs)
 
@@ -253,7 +258,7 @@ class IVIMAnalysis:
         if (
             save_ivim_params
             and self.ivim_params_maps is not None
-            and load_from_pickle == False
+            and (load_from_pickle == False or not_fount)
         ):
             self.save_ivim_params()
 
@@ -287,6 +292,9 @@ class IVIMAnalysis:
                 s=rad**2 * pi,
                 facecolors="None",
                 edgecolors="r",
+            )
+            ax.text(
+                x_roi, y_roi, rad, f"{x_roi}, {y_roi}, {rad}", fontsize=8, color="red"
             )
 
     def plot_pancreas_slice(self, ax, plot_roi: bool = False, circles: list = None):
@@ -349,13 +357,15 @@ class IVIMAnalysis:
             )
         # plt.scatter(bvals.sort(),intensive_of_10b)
 
-    def plot_log_b(self):
+    def plot_log_b(self, i_circle: int = 0):
         """plot the b-value intensities"""
         if self.mask_roi is None:
             self.generate_roi_mask()
             print("!Warning! ROI mask generated")
         assert self.mask_roi is not None, "Generate the ROI mask first"
-        mask_roi = self.mask_roi
+        # mask_roi = self.mask_roi
+        # TODO: single to multiple
+        mask_roi = self.mask_multi_roi[i_circle]
         num_bval = self.img_data.shape[3]
         print(num_bval)
         intensive_of_10b = np.zeros(num_bval)
@@ -373,11 +383,12 @@ class IVIMAnalysis:
         assert len(bvals) == len(intensive_of_10b), "b-values length mismatch"
 
         # TODO: Fix the x-axis
-        if len(bvals) == 10:
-            tmp_bvals = [0, 20, 50, 80, 150, 200, 500, 800, 1000, 1500]
-        else:
-            # !This part is broken
-            tmp_bvals = [0, 10, 20, 50, 80, 150, 200, 500, 800, 1000, 1500]
+        # if len(bvals) == 10:
+        #     tmp_bvals = [0, 20, 50, 80, 150, 200, 500, 800, 1000, 1500]
+        # else:
+        #     # !This part is broken
+        #     tmp_bvals = [0, 10, 20, 50, 80, 150, 200, 500, 800, 1000, 1500]
+        tmp_bvals = bvals
         plt.scatter(tmp_bvals, intensive_of_10b)
 
         from sklearn.linear_model import LinearRegression
@@ -389,6 +400,10 @@ class IVIMAnalysis:
         x = np.array(tmp_bvals)
         y = reg.coef_ * x + reg.intercept_
         plt.plot(x, y, "-r")
+        # set title
+        plt.title(
+            f"Logarithm of b-value intensities {self.circles[0][0]}, {self.circles[0][1]}"
+        )
 
     @property
     def estimated_params_roi(self):
